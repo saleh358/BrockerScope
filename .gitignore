@@ -1,0 +1,13 @@
+bin/
+obj/
+node_modules/
+dist/
+.vs/
+.env
+.env.local
+local.settings.json
+connections.db
+connections.db-shm
+connections.db-wal
+*.user
+*.suo

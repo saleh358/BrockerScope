@@ -33,12 +33,15 @@ builder
                     })
                     .AllowAnyHeader()
                     .AllowAnyMethod()
+                    .AllowCredentials()
         )
     )
     .AddEndpointsApiExplorer()
     .ConfigureApplicationService(builder.Configuration);
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -47,10 +50,25 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors("LocalDashboard");
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapGet("/", () => Results.Ok(new { Now = DateTimeOffset.UtcNow })).WithTags("Health");
 app.MapGet("/api/ping", () => Results.Ok(new { Now = DateTimeOffset.UtcNow })).WithTags("Health");
+app.MapAuthEndpoints();
 
-app.MapFeatureEndpoints();
+var authorizedApi = app.MapGroup(string.Empty).RequireAuthorization();
+
+authorizedApi.MapPost("/api/session/heartbeat", () =>
+{
+    SessionActivity.Touch();
+    return Results.Ok(new { Now = SessionActivity.LastHeartbeatUtc });
+}).WithTags("Session");
+authorizedApi.MapGet("/api/session/status", () => Results.Ok(new { LastHeartbeatUtc = SessionActivity.LastHeartbeatUtc }))
+    .WithTags("Session");
+
+authorizedApi.MapFeatureEndpoints();
+app.MapFallbackToFile("index.html");
 
 app.Run();

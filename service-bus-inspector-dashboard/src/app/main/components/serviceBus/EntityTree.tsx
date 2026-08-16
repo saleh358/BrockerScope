@@ -123,6 +123,7 @@ export default function EntityTree({ entities, selectedEntity, onSelect }: Props
         }}
       >
       <EntitySectionTitle
+        color="info.main"
         title="Queues"
         count={queues.length}
         expanded={queuesExpanded}
@@ -132,6 +133,7 @@ export default function EntityTree({ entities, selectedEntity, onSelect }: Props
         <List dense disablePadding>
           {queues.map((entity) => (
             <EntityRow
+              color="info.main"
               entity={entity}
               key={entity.path}
               label={entity.name}
@@ -145,6 +147,7 @@ export default function EntityTree({ entities, selectedEntity, onSelect }: Props
       <Divider />
 
       <EntitySectionTitle
+        color="secondary.main"
         title="Topics"
         count={topicGroups.length}
         expanded={topicsExpanded}
@@ -166,7 +169,7 @@ export default function EntityTree({ entities, selectedEntity, onSelect }: Props
             return (
               <Box key={group.topicName}>
                 <ListItemButton onClick={() => toggleTopic(group.topicName)} sx={{ minHeight: 42 }}>
-                  <ListItemIcon sx={{ minWidth: 34 }}>
+                  <ListItemIcon sx={{ color: 'secondary.main', minWidth: 34 }}>
                     <AccountTreeOutlinedIcon fontSize="small" />
                   </ListItemIcon>
                   <Tooltip title={group.topicName}>
@@ -195,6 +198,7 @@ export default function EntityTree({ entities, selectedEntity, onSelect }: Props
                   <List dense disablePadding>
                     {group.subscriptions.map((entity) => (
                       <EntityRow
+                        color="success.main"
                         entity={entity}
                         indent
                         key={entity.path}
@@ -216,11 +220,13 @@ export default function EntityTree({ entities, selectedEntity, onSelect }: Props
 }
 
 function EntitySectionTitle({
+  color,
   title,
   count,
   expanded,
   onToggle
 }: {
+  color: string;
   title: string;
   count: number;
   expanded: boolean;
@@ -228,7 +234,7 @@ function EntitySectionTitle({
 }) {
   return (
     <ListItemButton onClick={onToggle} sx={{ minHeight: 40, px: 2, py: 1 }}>
-      <ListItemIcon sx={{ minWidth: 30 }}>
+      <ListItemIcon sx={{ color, minWidth: 30 }}>
         {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
       </ListItemIcon>
       <ListItemText
@@ -243,12 +249,14 @@ function EntitySectionTitle({
 }
 
 function EntityRow({
+  color,
   entity,
   indent,
   label,
   selected,
   onSelect
 }: {
+  color: string;
   entity: ServiceBusEntity;
   indent?: boolean;
   label: string;
@@ -265,7 +273,7 @@ function EntityRow({
       onClick={() => onSelect(entity)}
       sx={{ minHeight: 42, pl: indent ? 5.5 : 2 }}
     >
-      <ListItemIcon sx={{ minWidth: 34 }}>
+      <ListItemIcon sx={{ color, minWidth: 34 }}>
         <InboxOutlinedIcon fontSize="small" />
       </ListItemIcon>
       <Tooltip title={entity.path}>

@@ -3,6 +3,7 @@ import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
@@ -51,10 +52,12 @@ type Page = 'dashboard' | 'settings';
 
 type Props = {
   colorMode: 'light' | 'dark';
+  email: string;
+  onLogout: () => Promise<void>;
   onToggleColorMode: () => void;
 };
 
-export default function ServiceBusDashboard({ colorMode, onToggleColorMode }: Props) {
+export default function ServiceBusDashboard({ colorMode, email, onLogout, onToggleColorMode }: Props) {
   const [page, setPage] = useState<Page>('dashboard');
   const [connections, setConnections] = useState<ServiceBusConnection[]>([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState<number | null>(null);
@@ -170,9 +173,8 @@ export default function ServiceBusDashboard({ colorMode, onToggleColorMode }: Pr
               peekCount,
               deadLetter,
               selectedConnectionId ?? undefined
-            );
+      );
       setMessages(loadedMessages);
-      setSelectedMessage(loadedMessages[0] ?? null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Failed to peek messages.');
     } finally {
@@ -301,6 +303,11 @@ export default function ServiceBusDashboard({ colorMode, onToggleColorMode }: Pr
                   onClick={onToggleColorMode}
                 >
                   {colorMode === 'light' ? <DarkModeOutlinedIcon /> : <LightModeOutlinedIcon />}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={`Sign out ${email}`}>
+                <IconButton aria-label="Sign out" onClick={() => void onLogout()}>
+                  <LogoutOutlinedIcon />
                 </IconButton>
               </Tooltip>
             </Stack>

@@ -1,16 +1,27 @@
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using BrokerScope.Api.Data;
+using BrokerScope.Api.Services.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace BrokerScope.Api.Services.ServiceBus;
 
-public sealed class ServiceBusConnectionProvider(AppDbContext dbContext) : IServiceBusConnectionProvider
+public sealed class ServiceBusConnectionProvider(
+    AppDbContext dbContext,
+    ICurrentUser currentUser
+) : IServiceBusConnectionProvider
 {
     public ServiceBusClient CreateClient(int? connectionId = null)
     {
         var connectionString = GetConnectionString(connectionId);
-        return new ServiceBusClient(connectionString);
+        return new ServiceBusClient(
+            connectionString,
+            new ServiceBusClientOptions
+            {
+                // Shared web hosts commonly block AMQP/TCP 5671. WebSockets uses HTTPS 443.
+                TransportType = ServiceBusTransportType.AmqpWebSockets,
+            }
+        );
     }
 
     public ServiceBusAdministrationClient CreateAdministrationClient(int? connectionId = null)
@@ -21,7 +32,9 @@ public sealed class ServiceBusConnectionProvider(AppDbContext dbContext) : IServ
 
     private string GetConnectionString(int? connectionId)
     {
-        var connections = dbContext.Connections.AsNoTracking();
+        var connections = dbContext
+            .Connections.AsNoTracking()
+            .Where(item => item.UserId == currentUser.UserId);
         var connection = connectionId.HasValue
             ? connections.SingleOrDefault(item => item.Id == connectionId.Value)
             : connections.OrderBy(item => item.Id).FirstOrDefault();

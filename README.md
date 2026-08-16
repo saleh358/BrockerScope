@@ -14,6 +14,7 @@ BrokerScope is a modern, self-hosted dashboard for exploring Azure Service Bus n
 - Inspect message bodies and metadata in a details drawer.
 - Independent scrolling for entity and message lists.
 - Persistent light and black themes.
+- ASP.NET Core Identity authentication with private per-user connections.
 
 ## Technology
 
@@ -64,7 +65,7 @@ Start the API from the repository root:
 dotnet run --project service-bus-inspector/src/BrokerScope.Api
 ```
 
-The API runs at `http://localhost:5056`. EF Core migrations are applied automatically during startup.
+The API runs at `http://127.0.0.1:5056`. EF Core migrations are applied automatically during startup.
 
 ## Dashboard Setup
 
@@ -76,15 +77,32 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`, navigate to **Settings**, and add one or more Azure Service Bus connections. Return to **Dashboard** and use the connection selector in the top-right corner to choose a namespace.
+Open `http://127.0.0.1:5173`, create an account or sign in, then navigate to **Settings** and add one or more Azure Service Bus connections. Each account can see and use only the connections it created. Return to **Dashboard** and use the connection selector in the top-right corner to choose a namespace.
+
+### One-click Windows startup
+
+Double-click `Start-BrokerScope.bat` in this repository. It starts the API and frontend in the background, then opens the dashboard in your browser. To stop the background services, double-click `Stop-BrokerScope.bat`.
+
+For a desktop icon, right-click `Start-BrokerScope.bat`, choose **Show more options > Send to > Desktop (create shortcut)**.
 
 To use a different API address, create a frontend `.env.local` file:
 
 ```dotenv
-VITE_API_BASE_URL=http://localhost:5056
+VITE_API_BASE_URL=http://127.0.0.1:5056
 ```
 
 ## API Endpoints
+
+All connection and Service Bus endpoints require an authenticated Identity cookie.
+
+### Authentication
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/auth/status` | Get the current session and initial-setup status |
+| `POST` | `/api/auth/register` | Create a user account |
+| `POST` | `/api/auth/login` | Sign in and issue the secure HTTP-only cookie |
+| `POST` | `/api/auth/logout` | End the authenticated session |
 
 ### Connections
 
@@ -118,4 +136,4 @@ npm run build
 
 BrokerScope only lists Service Bus entities and peeks messages. It does not expose operations to send, receive, complete, abandon, dead-letter, purge, delete, or resend messages.
 
-Service Bus connection strings are sensitive credentials. The current local setup stores them in the application database and returns them through the connection-management API. Before exposing BrokerScope outside a trusted environment, add authentication and authorization, encrypt stored secrets, restrict CORS, and serve the application over HTTPS.
+Service Bus connection strings are sensitive credentials. BrokerScope protects its management and inspection APIs with ASP.NET Core Identity, HTTP-only cookies, lockout after repeated failures, and per-user ownership checks in both connection management and Service Bus access. The strings are still stored in the application database, so restrict database access, use a least-privilege Service Bus policy, and serve public deployments only over HTTPS. Encryption at rest for individual connection strings is not currently implemented.

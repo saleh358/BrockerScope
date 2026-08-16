@@ -1,5 +1,9 @@
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Box, Divider, Drawer, Stack, Typography } from '@mui/material';
 import { ServiceBusMessage } from '../../../api/ServiceBus/models/serviceBusTypes';
+
+const DEFAULT_WIDTH = 440;
+const MIN_WIDTH = 320;
 
 type Props = {
   message: ServiceBusMessage | null;
@@ -8,8 +12,70 @@ type Props = {
 };
 
 export default function MessageDetailsDrawer({ message, open, onClose }: Props) {
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const resizeState = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  useEffect(() => {
+    function handlePointerMove(event: PointerEvent) {
+      if (!resizeState.current) return;
+
+      const maxWidth = Math.max(MIN_WIDTH, Math.floor(window.innerWidth * 0.8));
+      const nextWidth = resizeState.current.startWidth + resizeState.current.startX - event.clientX;
+      setWidth(Math.min(Math.max(nextWidth, MIN_WIDTH), maxWidth));
+    }
+
+    function stopResizing() {
+      resizeState.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', stopResizing);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', stopResizing);
+    };
+  }, []);
+
+  function startResizing(event: ReactPointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    resizeState.current = { startX: event.clientX, startWidth: width };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 440 } } }}>
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      PaperProps={{
+        sx: {
+          left: 'auto',
+          right: 0,
+          width: { xs: '100%', sm: `${width}px` }
+        }
+      }}
+    >
+      <Box
+        aria-label="Resize message details panel"
+        onPointerDown={startResizing}
+        role="separator"
+        sx={{
+          '&:hover': { bgcolor: 'primary.main' },
+          cursor: 'col-resize',
+          display: { xs: 'none', sm: 'block' },
+          height: '100%',
+          left: 0,
+          position: 'absolute',
+          top: 0,
+          touchAction: 'none',
+          width: 6,
+          zIndex: 1
+        }}
+      />
       <Box sx={{ p: 2.5 }}>
         <Typography variant="h6">Message details</Typography>
         <Typography color="text.secondary" variant="body2">

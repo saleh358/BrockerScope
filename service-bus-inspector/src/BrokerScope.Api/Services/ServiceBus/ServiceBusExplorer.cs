@@ -124,7 +124,33 @@ public sealed class ServiceBusExplorer(
     )
     {
         var count = Math.Clamp(requestedCount, 1, Math.Max(1, _options.MaxPeekCount));
-        var messages = await receiver.PeekMessagesAsync(count, cancellationToken: cancellationToken);
+        var messages = new List<ServiceBusReceivedMessage>();
+        long? nextSequenceNumber = null;
+
+        while (messages.Count < count)
+        {
+            var remainingCount = count - messages.Count;
+            var batch = await receiver.PeekMessagesAsync(
+                remainingCount,
+                nextSequenceNumber,
+                cancellationToken
+            );
+
+            if (batch.Count == 0)
+            {
+                break;
+            }
+
+            messages.AddRange(batch);
+
+            var next = batch[^1].SequenceNumber + 1;
+            if (nextSequenceNumber == next)
+            {
+                break;
+            }
+
+            nextSequenceNumber = next;
+        }
 
         return messages.Select(MapMessage).ToList();
     }

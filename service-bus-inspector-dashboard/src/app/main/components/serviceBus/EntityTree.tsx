@@ -32,6 +32,10 @@ type TopicGroup = {
   subscriptions: ServiceBusEntity[];
 };
 
+function formatMessageCounts(activeCount: number, deadLetterCount: number) {
+  return `Active: ${activeCount.toLocaleString()} / Dead-letter: ${deadLetterCount.toLocaleString()}`;
+}
+
 export default function EntityTree({ entities, selectedEntity, onSelect }: Props) {
   const [queuesExpanded, setQueuesExpanded] = useState(true);
   const [topicsExpanded, setTopicsExpanded] = useState(true);
@@ -175,7 +179,7 @@ export default function EntityTree({ entities, selectedEntity, onSelect }: Props
                   <Tooltip title={group.topicName}>
                     <ListItemText
                       primary={group.topicName}
-                      secondary={`${group.subscriptions.length} subscriptions`}
+                      secondary={`${group.subscriptions.length} subscriptions - ${formatMessageCounts(activeCount, deadLetterCount)}`}
                       primaryTypographyProps={{ noWrap: true, fontSize: 13 }}
                       secondaryTypographyProps={{ fontSize: 12 }}
                     />
@@ -279,7 +283,7 @@ function EntityRow({
       <Tooltip title={entity.path}>
         <ListItemText
           primary={label}
-          secondary={entity.deadLetterMessageCount > 0 ? 'Has dead-letter messages' : entity.status}
+          secondary={formatMessageCounts(entity.activeMessageCount, entity.deadLetterMessageCount)}
           primaryTypographyProps={{ noWrap: true, fontSize: 13 }}
           secondaryTypographyProps={{ fontSize: 12, noWrap: true }}
         />

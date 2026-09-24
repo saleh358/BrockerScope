@@ -1,6 +1,7 @@
 using BrokerScope.Api;
 using BrokerScope.Api.Data;
 using BrokerScope.Api.Extensions;
+using BrokerScope.Api.Services.Connections;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,6 +48,8 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
+    var encryptionMigrator = scope.ServiceProvider.GetRequiredService<ConnectionStringEncryptionMigrator>();
+    await encryptionMigrator.MigrateAsync();
 }
 
 app.UseCors("LocalDashboard");

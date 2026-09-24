@@ -5,7 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BrokerScope.Api.Services.Connections;
 
-public sealed class ConnectionStore(AppDbContext dbContext, ICurrentUser currentUser)
+public sealed class ConnectionStore(
+    AppDbContext dbContext,
+    ICurrentUser currentUser,
+    IConnectionStringProtector connectionStringProtector
+)
     : IConnectionStore
 {
     public async Task<ConnectionDto> CreateAsync(
@@ -13,32 +17,40 @@ public sealed class ConnectionStore(AppDbContext dbContext, ICurrentUser current
         CancellationToken cancellationToken
     )
     {
-        var created = new ConnectionDto(0, connection.Name, connection.ConnectionString)
+        var created = new ConnectionDto(
+            0,
+            connection.Name,
+            connectionStringProtector.Protect(connection.ConnectionString)
+        )
         {
             UserId = currentUser.UserId,
         };
         dbContext.Connections.Add(created);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return created;
+        return Decrypt(created);
     }
 
     public async Task<IReadOnlyList<ConnectionDto>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await dbContext
+        var connections = await dbContext
             .Connections.AsNoTracking()
             .Where(connection => connection.UserId == currentUser.UserId)
             .OrderBy(connection => connection.Id)
             .ToListAsync(cancellationToken);
+
+        return connections.Select(Decrypt).ToList();
     }
 
     public async Task<ConnectionDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        return await dbContext
+        var connection = await dbContext
             .Connections.AsNoTracking()
             .SingleOrDefaultAsync(
                 connection => connection.Id == id && connection.UserId == currentUser.UserId,
                 cancellationToken
             );
+
+        return connection is null ? null : Decrypt(connection);
     }
 
     public async Task<ConnectionDto?> UpdateAsync(
@@ -60,12 +72,12 @@ public sealed class ConnectionStore(AppDbContext dbContext, ICurrentUser current
         var updated = existing with
         {
             Name = connection.Name,
-            ConnectionString = connection.ConnectionString,
+            ConnectionString = connectionStringProtector.Protect(connection.ConnectionString),
         };
         dbContext.Entry(existing).CurrentValues.SetValues(updated);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return updated;
+        return Decrypt(updated);
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
@@ -87,10 +99,18 @@ public sealed class ConnectionStore(AppDbContext dbContext, ICurrentUser current
 
     public async Task<ConnectionDto?> GetDefaultAsync(CancellationToken cancellationToken)
     {
-        return await dbContext
+        var connection = await dbContext
             .Connections.AsNoTracking()
             .Where(connection => connection.UserId == currentUser.UserId)
             .OrderBy(connection => connection.Id)
             .FirstOrDefaultAsync(cancellationToken);
+
+        return connection is null ? null : Decrypt(connection);
     }
+
+    private ConnectionDto Decrypt(ConnectionDto connection) =>
+        connection with
+        {
+            ConnectionString = connectionStringProtector.Unprotect(connection.ConnectionString),
+        };
 }

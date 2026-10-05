@@ -1,7 +1,6 @@
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using BrokerScope.Api.Data;
-using BrokerScope.Api.Services.Connections;
 using BrokerScope.Api.Services.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,8 +8,7 @@ namespace BrokerScope.Api.Services.ServiceBus;
 
 public sealed class ServiceBusConnectionProvider(
     AppDbContext dbContext,
-    ICurrentUser currentUser,
-    IConnectionStringProtector connectionStringProtector
+    ICurrentUser currentUser
 ) : IServiceBusConnectionProvider
 {
     public ServiceBusClient CreateClient(int? connectionId = null)
@@ -50,6 +48,6 @@ public sealed class ServiceBusConnectionProvider(
             );
         }
 
-        return connectionStringProtector.Unprotect(connection.ConnectionString);
+        return connection.ConnectionString;
     }
 }

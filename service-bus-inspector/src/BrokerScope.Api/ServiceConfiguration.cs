@@ -5,7 +5,6 @@ using BrokerScope.Api.Services.Identity;
 using BrokerScope.Api.Services.ServiceBus;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 namespace BrokerScope.Api;
@@ -25,7 +24,6 @@ public static class ServiceConfiguration
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(databaseConnectionString)
         );
-        services.AddDataProtection().SetApplicationName("BrokerScope");
 
         services
             .AddAuthentication(IdentityConstants.ApplicationScheme)
@@ -75,8 +73,6 @@ public static class ServiceConfiguration
         services
             .Configure<ServiceBusOptions>(config.GetSection(ServiceBusOptions.SectionName))
             .AddScoped<ICurrentUser, CurrentUser>()
-            .AddSingleton<IConnectionStringProtector, ConnectionStringProtector>()
-            .AddScoped<ConnectionStringEncryptionMigrator>()
             .AddScoped<IConnectionStore, ConnectionStore>()
             .AddScoped<IServiceBusConnectionProvider, ServiceBusConnectionProvider>()
             .AddSingleton<IMessageBodyFormatter, MessageBodyFormatter>()

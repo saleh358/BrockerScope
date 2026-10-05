@@ -55,6 +55,10 @@ Configure the application database in `service-bus-inspector/src/BrokerScope.Api
   "ServiceBus": {
     "DefaultPeekCount": 100,
     "MaxPeekCount": 500
+  },
+  "LogViewer": {
+    "ServiceName": "BrokerScope",
+    "Port": 5055
   }
 }
 ```
@@ -66,6 +70,7 @@ dotnet run --project service-bus-inspector/src/BrokerScope.Api
 ```
 
 The API runs at `http://127.0.0.1:5056`. EF Core migrations are applied automatically during startup.
+The LogViewer dashboard runs at `http://127.0.0.1:5055` and displays application logs in real time.
 
 ## Dashboard Setup
 
@@ -136,4 +141,4 @@ npm run build
 
 BrokerScope only lists Service Bus entities and peeks messages. It does not expose operations to send, receive, complete, abandon, dead-letter, purge, delete, or resend messages.
 
-Service Bus connection strings are sensitive credentials. BrokerScope protects its management and inspection APIs with ASP.NET Core Identity, HTTP-only cookies, lockout after repeated failures, and per-user ownership checks in both connection management and Service Bus access. Connection strings are encrypted in the application database with ASP.NET Core Data Protection; plaintext rows created by earlier versions are encrypted automatically at startup. Preserve the application's Data Protection key ring when moving or redeploying the application, because losing it makes the stored connection strings unreadable. Also restrict database access, use a least-privilege Service Bus policy, and serve public deployments only over HTTPS.
+Service Bus connection strings are sensitive credentials. BrokerScope protects its management and inspection APIs with ASP.NET Core Identity, HTTP-only cookies, lockout after repeated failures, and per-user ownership checks in both connection management and Service Bus access. The strings are still stored in the application database, so restrict database access, use a least-privilege Service Bus policy, and serve public deployments only over HTTPS. Encryption at rest for individual connection strings is not currently implemented.

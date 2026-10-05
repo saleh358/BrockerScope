@@ -1,7 +1,8 @@
 using BrokerScope.Api;
 using BrokerScope.Api.Data;
 using BrokerScope.Api.Extensions;
-using BrokerScope.Api.Services.Connections;
+using LogViewer;
+using LogViewer.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,8 +14,18 @@ var localConfig = new ConfigurationBuilder()
 
 builder.Configuration.AddConfiguration(localConfig);
 
+var logViewerPort = builder.Configuration.GetValue("LogViewer:Port", 5055);
+var configuredLogViewerServiceName = builder.Configuration["LogViewer:ServiceName"];
+var logViewerServiceName = string.IsNullOrWhiteSpace(configuredLogViewerServiceName)
+    ? "BrokerScope"
+    : configuredLogViewerServiceName;
+await using var logViewer = await LogViewerServer.StartAsync(
+    new LogViewerOptions { Port = logViewerPort, ServiceName = logViewerServiceName }
+);
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Logging.AddLogViewer(logViewer);
 
 builder
     .Services.AddCors(options =>
@@ -48,8 +59,6 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
-    var encryptionMigrator = scope.ServiceProvider.GetRequiredService<ConnectionStringEncryptionMigrator>();
-    await encryptionMigrator.MigrateAsync();
 }
 
 app.UseCors("LocalDashboard");
